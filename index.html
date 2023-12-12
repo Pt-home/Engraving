@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Engraving</title>
+  <style>
+   body { 
+     background-color: #474747; 
+     user-select: none; 
+     margin: 0; 
+     padding: 0; }
+    body, input, select, label { 
+      font-family: "Open Sans", Sans-Serif; 
+      font-size: 12px; 
+      color: #d5d5d5; 
+      vertical-align: top; 
+      overflow: hidden; 
+    }
+    label { 
+      line-height:21px; 
+      display: block; 
+      margin: 2px 4px 0 0;
+      width:4em;
+    }
+    .form-group, .form-group-param {
+      text-align:center;
+    }
+    .form-group-param label { 
+      display: inline-block; 
+      width: 5em;
+      text-align: right;
+    }
+    input { 
+      background-color: #252525; 
+      border: 1px solid #252525; 
+      border-radius: 3px; 
+      transition: border 0.5s; 
+      padding: 3px; 
+      box-sizing: border-box; 
+      margin: 2px 2px;
+      width: 4em;
+    }
+
+    select { 
+      background-color: #252525; 
+      border: 1px solid #252525; 
+      border-radius: 3px; 
+      transition: border 0.5s; 
+      padding: 3px; 
+      box-sizing: border-box; 
+      margin: 2px 2px;
+      width: 10em;
+    }
+     
+    input:not(.button):hover, select:hover, input:not(.button):focus, select:focus 
+    { border: 1px solid #3482f6; 
+     outline: none !important; 
+    }
+    .button { 
+      background-color: #606060; 
+      margin: 8px 0 0 1.5px; 
+      border-radius: 3px; 
+      border-top-width: 1px; 
+      border-top-color: rgba(255,255,255,0.15); 
+      border-bottom-width: 1px;
+      border-bottom-color: rgba(0,0,0,0.6);
+      border-left: 0px; 
+      border-right: 0px;
+      padding: 8px;
+      font-size: 13px; 
+      width:18em;
+      text-overflow: ellipsis; 
+      cursor: pointer;
+    }
+    .button:hover { 
+      background-color: #6a6a6a;
+    }
+    .buttonPreset {
+      width:11em;
+    }
+    .page {
+      padding: 6px;
+      margin: 0px auto;
+    }
+    .page > div {
+      margin-bottom: 6px;
+    }
+    h3 {
+      text-align:center;
+      line-height: 0;
+    }
+    .distributionValue {
+      width: 24em;
+    }
+    .progress {
+      text-align: center;
+    }
+       
+  </style>
+ 
+</head>
+<body>
+    <div id="page" class="page">
+    <h3>Engraving</h3>      
+      
+    <form id="Engraving">
+
+      <div class="form-group-param">
+        <br>
+        <label for="methodValue">Method:</label>
+        <select name="methodValue" id="methodValue" onchange="interfaceEngraving();">
+          <option value="waves">Waves</option> 
+          <option value="stripes">Stripes</option> 
+          <option value="lines">Lines</option>
+          <option value="circles">Circles</option>
+      </select>
+      </div>
+
+      <div class="form-group-param"> 
+        <br>
+        <label for="slValue">Start:</label>
+        <input type="number" id="slValue" name="slValue" value="32" min="2" max="84" step="1" required>
+        <label for="sizeValue">Smooth:</label>
+        <input type="number" id="sizeValue" name="sizeValue" value="5" min="0" max="50" step="1"  required>
+        
+      </div>
+
+      <div class="form-group-param">
+        <br>
+        <label for="typeValue">Type:</label>
+        <select name="typeValue" id="typeValue" onchange="interfaceEngraving();">
+          <option value="average">Average</option> 
+          <option value="average_dither">Average+Dither</option> 
+          <option value="gray_dither">BW Dither</option>    
+          <option value="gray">Grayscale</option>   
+          <option value="median">Median</option>
+          <option value="median_dither">Median+Dither</option>
+          
+      </select>
+      </div>
+
+      <div class="form-group-param" id="medianParam" style ="display:none;"> 
+        <br>
+        <label for="radiusValue">Radius:</label>
+        <input type="number" id="radiusValue" name="radiusValue" value="5" min="1" max="200" step="1" required>
+        
+      </div>
+
+      <script>
+        
+        function interfaceEngraving(){
+          var reduceType = document.getElementById("typeValue").value;
+          
+          if (reduceType == "median" || reduceType == "median_dither"){
+            document.getElementById("medianParam").style.display   = "block";                
+          } else {
+            document.getElementById("medianParam").style.display   = "none";                
+          }
+
+        }
+          
+      </script>
+
+       
+     
+    </form>
+      
+     <div class="form-group">
+       <br>
+       <input type="button" value="Apply Filter (New Merged Layer)" id="applySL" onclick="applyEngraving(true);" class="button"/>
+       <br>
+       <input type="button" value="Apply Filter (No Merged Layers)" id="applySL" onclick="applyEngraving(false);" class="button"/>
+     </div>
+      
+    <div class="form-group">
+       <p id="indi"    style="visibility: hidden;">Runtime (ms): <span id="runtime">0</span> </p> 
+       <p id="working" style="visibility: hidden;">Working...</p> 
+     </div>
+
+    <div class="form-group-param">
+        <p><br><a href="indexRC.html" style="color:white;">Go to Reduce Colors</a></p>
+    </div>
+
+   
+    
+  </div>
+
+  <script>
+  
+  function applyEngraving(isMerged){
+    
+    var indi = document.getElementById("indi");
+    var working = document.getElementById("working");
+    var runTime = document.getElementById("runtime");
+
+    working.style.visibility = "visible";
+    indi.style.visibility = "hidden";
+
+    //Read parameters
+    var form = document.getElementById("Engraving");
+
+    var method = form.elements.methodValue.value; 
+    var startLevel = form.elements.slValue.value; 
+    var sizeSmooth = form.elements.sizeValue.value; 
+    var type = form.elements.typeValue.value; 
+    var radius = form.elements.radiusValue.value; 
+    
+    var scriptString = `
+      function createBlackLayerWithWhiteSelections(lineW, method) {
+        var doc = app.activeDocument;
+        var width = doc.width;
+        var height = doc.height;
+
+        var k = Math.SQRT2;
+        var mas = Math.ceil(k * 100);
+   
+        var black = new SolidColor();
+        black.rgb.red = 0;
+        black.rgb.green = 0;
+        black.rgb.blue = 0;
+
+        var white = new SolidColor();
+        white.rgb.red = 255;
+        white.rgb.green = 255;
+        white.rgb.blue = 255;
+
+        var layer = doc.artLayers.add();
+        layer.name = "Wawe Layer";
+        
+        doc.selection.fill(white);
+      
+        for (var y = 0; y < height; y += lineW) {
+          var lineRegion = [
+            [0, y],
+            [width, y],
+            [width, y + 1],
+            [0, y + 1]
+          ];
+          doc.selection.select(lineRegion);
+          doc.selection.fill(black);
+          doc.selection.deselect();
+        }
+
+        if ("${method}"=="waves" || "${method}"=="stripes"){
+            var idWave = charIDToTypeID( "Wave" );
+                var descWave = new ActionDescriptor();
+                var idWvtp = charIDToTypeID( "Wvtp" );
+                var idWvtp = charIDToTypeID( "Wvtp" );
+                var idWvSn = charIDToTypeID( "WvSn" );
+                descWave.putEnumerated( idWvtp, idWvtp, idWvSn );
+                var idNmbG = charIDToTypeID( "NmbG" );
+                descWave.putInteger( idNmbG, 10 );
+                var idWLMn = charIDToTypeID( "WLMn" );
+                descWave.putInteger( idWLMn, 99 );
+                var idWLMx = charIDToTypeID( "WLMx" );
+                descWave.putInteger( idWLMx, 100 );
+                var idAmMn = charIDToTypeID( "AmMn" );
+                descWave.putInteger( idAmMn, 10 );
+                var idAmMx = charIDToTypeID( "AmMx" );
+                descWave.putInteger( idAmMx, 11 );
+                var idSclH = charIDToTypeID( "SclH" );
+                descWave.putInteger( idSclH, 100 );
+                var idSclV = charIDToTypeID( "SclV" );
+                descWave.putInteger( idSclV, 100 );
+                var idUndA = charIDToTypeID( "UndA" );
+                var idUndA = charIDToTypeID( "UndA" );
+                var idRptE = charIDToTypeID( "RptE" );
+                descWave.putEnumerated( idUndA, idUndA, idRptE );
+                var idRndS = charIDToTypeID( "RndS" );
+                descWave.putInteger( idRndS, Date.now() );
+            executeAction( idWave, descWave, DialogModes.NO );
+            
+        } else if ("${method}"=="circles"){
+           app.activeDocument.activeLayer.applyPolarCoordinates(PolarConversionType.RECTANGULARTOPOLAR);
+           
+        }
+
+        layer.resize(mas, mas, AnchorPosition.MIDDLECENTER);
+
+        if ("${method}"=="circles") {
+
+          if (width != height) {
+             if (width > height) {                
+                var kw = width/height;
+                mas = Math.ceil(kw * 100);
+                layer.resize(100, mas, AnchorPosition.MIDDLECENTER);
+             }
+             else {                
+                var kh = height/width;
+                mas = Math.ceil(kh * 100);
+                layer.resize(mas, 100, AnchorPosition.MIDDLECENTER);             
+             }              
+          }
+
+          var xt = Math.floor(Math.random() * 2 * width / 5 - width / 5);
+          var yt = Math.floor(Math.random() * 2 * height / 5 - height / 5);
+
+          app.activeDocument.activeLayer.translate(xt, yt);
+          
+        } else {
+
+          var d = Math.sqrt(width*width + height*height) / 2;
+        
+          if (width > height && d > k*height/2) {
+            var h = (k-1)*height/2;
+            var x1 = width/2;
+            var y1 = height/2;
+            var y2 = y1 + h;
+            var x2 = Math.sqrt(d*d - y2*y2);
+            var u2 = Math.atan2(y2, x2);
+            var u1 = Math.atan2(y1, x1);
+            var degree = Math.abs(u1-u2);
+            degree = degree * (180 / Math.PI);
+            degree = Math.round(degree * 10) / 10;
+            
+          } else if (height > width && d > k*width/2) {
+            var w = (k-1)*width/2;
+            var x1 = width/2;
+            var y1 = height/2;
+            var x2 = x1 + w;
+            var y2 = Math.sqrt(d*d - x2*x2);
+            var u2 = Math.atan2(y2, x2);
+            var u1 = Math.atan2(y1, x1);
+            var degree = Math.abs(u1-u2);
+            degree = degree * (180 / Math.PI);
+            degree = Math.round(degree * 10) / 10;
+            
+          } else {
+            var degree = 45;
+          }
+        
+          var angleRotation = Math.floor(Math.random() * 2 * degree - degree);
+          app.activeDocument.activeLayer.rotate(angleRotation);
+          
+        }
+        
+        var idClrR = charIDToTypeID( "colorRange" );
+            var descClrR = new ActionDescriptor();
+            var idFzns = charIDToTypeID( "Fzns" );
+            descClrR.putInteger( idFzns, 100 );
+            var idMnm = charIDToTypeID( "Mnm " );
+                var descMnm = new ActionDescriptor();
+                var idLmnc = charIDToTypeID( "Lmnc" );
+                descMnm.putDouble( idLmnc, 100.000000 );
+                var idA = charIDToTypeID( "A   " );
+                descMnm.putDouble( idA, 0.000000 );
+                var idB = charIDToTypeID( "B   " );
+                descMnm.putDouble( idB, 0.000000 );
+            var idLbCl = charIDToTypeID( "LbCl" );
+            descClrR.putObject( idMnm, idLbCl, descMnm );
+            var idMxm = charIDToTypeID( "Mxm " );
+                var descMxm = new ActionDescriptor();
+                var idLmnc = charIDToTypeID( "Lmnc" );
+                descMxm.putDouble( idLmnc, 100.000000 );
+                var idA = charIDToTypeID( "A   " );
+                descMxm.putDouble( idA, 0.000000 );
+                var idB = charIDToTypeID( "B   " );
+                descMxm.putDouble( idB, 0.000000 );
+            var idLbCl = charIDToTypeID( "LbCl" );
+            descClrR.putObject( idMxm, idLbCl, descMxm );
+            var idcolorModel = stringIDToTypeID( "colorModel" );
+            descClrR.putInteger( idcolorModel, 0 );
+        executeAction( idClrR, descClrR, DialogModes.NO );
+
+        layer.remove();
+
+        app.activeDocument.selection.clear();
+
+        app.activeDocument.selection.deselect();
+      
+      }
+
+      //Main
+
+      if ( !(${isMerged}) ) {
+        var ArtLayers = ["BG"];
+      }
+
+      if ("${method}"=="stripes"){
+         var lineW = 2;     
+      } else {
+         var lineW = Math.ceil(256/${startLevel}) + 2;
+      }
+      
+      var activeLayer = app.activeDocument.activeLayer;
+
+      var bgLayer = activeLayer.duplicate();
+      bgLayer.name = "BG";
+      bgLayer.rasterize(RasterizeType.ENTIRELAYER);
+          
+      for (var step = ${startLevel}; step < 255; step = step + ${startLevel}) {
+          var duplicateLayer = bgLayer.duplicate();
+          duplicateLayer.name = String(step); 
+
+          app.activeDocument.activeLayer = duplicateLayer;
+          var idmove = charIDToTypeID( "move" );
+              var descMove = new ActionDescriptor();
+              var idnull = charIDToTypeID( "null" );
+                  var refTarget = new ActionReference();
+                  var idLyr = charIDToTypeID( "Lyr " );
+                  var idOrdn = charIDToTypeID( "Ordn" );
+                  var idTrgt = charIDToTypeID( "Trgt" );
+                  refTarget.putEnumerated( idLyr, idOrdn, idTrgt );
+              descMove.putReference( idnull, refTarget );
+              var idT = charIDToTypeID( "T   " );
+                  var refPlace = new ActionReference();
+                  var idLyr = charIDToTypeID( "Lyr " );
+                  var idOrdn = charIDToTypeID( "Ordn" );
+                  var idFrnt = charIDToTypeID( "Frnt" );
+                  refPlace.putEnumerated( idLyr, idOrdn, idFrnt );
+              descMove.putReference( idT, refPlace );
+          executeAction( idmove, descMove, DialogModes.NO );
+          
+          var maskLayer = bgLayer.duplicate();
+
+          app.activeDocument.activeLayer = maskLayer;
+          var idmove = charIDToTypeID( "move" );
+              var descMove = new ActionDescriptor();
+              var idnull = charIDToTypeID( "null" );
+                  var refTarget = new ActionReference();
+                  var idLyr = charIDToTypeID( "Lyr " );
+                  var idOrdn = charIDToTypeID( "Ordn" );
+                  var idTrgt = charIDToTypeID( "Trgt" );
+                  refTarget.putEnumerated( idLyr, idOrdn, idTrgt );
+              descMove.putReference( idnull, refTarget );
+              var idT = charIDToTypeID( "T   " );
+                  var refPlace = new ActionReference();
+                  var idLyr = charIDToTypeID( "Lyr " );
+                  var idOrdn = charIDToTypeID( "Ordn" );
+                  var idFrnt = charIDToTypeID( "Frnt" );
+                  refPlace.putEnumerated( idLyr, idOrdn, idFrnt );
+              descMove.putReference( idT, refPlace );
+          executeAction( idmove, descMove, DialogModes.NO );
+
+          var idThrs = charIDToTypeID( "Thrs" );
+              var descThrs = new ActionDescriptor();
+              var idLvl = charIDToTypeID( "Lvl " );
+              descThrs.putInteger( idLvl, step );
+          executeAction( idThrs, descThrs, DialogModes.NO );
+
+          var idClrR = charIDToTypeID( "colorRange" );
+            var descClrR = new ActionDescriptor();
+            var idFzns = charIDToTypeID( "Fzns" );
+            descClrR.putInteger( idFzns, 100 );
+            var idMnm = charIDToTypeID( "Mnm " );
+                var descMnm = new ActionDescriptor();
+                var idLmnc = charIDToTypeID( "Lmnc" );
+                descMnm.putDouble( idLmnc, 100.000000 );
+                var idA = charIDToTypeID( "A   " );
+                descMnm.putDouble( idA, 0.000000 );
+                var idB = charIDToTypeID( "B   " );
+                descMnm.putDouble( idB, 0.000000 );
+            var idLbCl = charIDToTypeID( "LbCl" );
+            descClrR.putObject( idMnm, idLbCl, descMnm );
+            var idMxm = charIDToTypeID( "Mxm " );
+                var descMxm = new ActionDescriptor();
+                var idLmnc = charIDToTypeID( "Lmnc" );
+                descMxm.putDouble( idLmnc, 100.000000 );
+                var idA = charIDToTypeID( "A   " );
+                descMxm.putDouble( idA, 0.000000 );
+                var idB = charIDToTypeID( "B   " );
+                descMxm.putDouble( idB, 0.000000 );
+            var idLbCl = charIDToTypeID( "LbCl" );
+            descClrR.putObject( idMxm, idLbCl, descMxm );
+            var idcolorModel = stringIDToTypeID( "colorModel" );
+            descClrR.putInteger( idcolorModel, 0 );
+        executeAction( idClrR, descClrR, DialogModes.NO );
+
+        maskLayer.remove();
+        
+        app.activeDocument.activeLayer = duplicateLayer;
+
+        //Smooth selection
+        try {
+              var bounds = app.activeDocument.selection.bounds;
+        } catch (e) {
+              app.activeDocument.activeLayer.remove();
+              break; 
+        }          
+        
+        app.activeDocument.selection.smooth(${sizeSmooth});
+
+        try {
+              var bounds = app.activeDocument.selection.bounds;
+        } catch (e) {
+              app.activeDocument.activeLayer.remove();
+              break; 
+        } 
+
+
+        if ("${type}"=="average") {
+        
+          app.activeDocument.activeLayer.applyAverage();
+
+        } else if ("${type}"=="average_dither") {
+        
+          app.activeDocument.activeLayer.applyAverage();
+
+          var idDthr = stringIDToTypeID( "Dthr" );
+              var descDthr = new ActionDescriptor();
+              var idPlte = charIDToTypeID( "Plte" );
+              descDthr.putInteger( idPlte, 2 );
+              var idMthd = charIDToTypeID( "Mthd" );
+              descDthr.putInteger( idMthd, 1 );
+          executeAction( idDthr, descDthr, DialogModes.NO );
+          
+        } else if ("${type}"=="gray") {
+        
+          var idFl = charIDToTypeID( "fill" );
+              var descFl = new ActionDescriptor();
+              var idUsng = charIDToTypeID( "Usng" );
+              var idFlCn = charIDToTypeID( "FlCn" );
+              var idClr = charIDToTypeID( "Clr " );
+              descFl.putEnumerated( idUsng, idFlCn, idClr );
+              var idClr = charIDToTypeID( "Clr " );
+                  var descClr = new ActionDescriptor();
+                  var idRd = charIDToTypeID( "Rd  " );
+                  descClr.putDouble( idRd, step );
+                  var idGrn = charIDToTypeID( "Grn " );
+                  descClr.putDouble( idGrn, step );
+                  var idBl = charIDToTypeID( "Bl  " );
+                  descClr.putDouble( idBl, step );
+              var idRGBC = charIDToTypeID( "RGBC" );
+              descFl.putObject( idClr, idRGBC, descClr );
+              var idOpct = charIDToTypeID( "Opct" );
+              var idPrc = charIDToTypeID( "#Prc" );
+              descFl.putUnitDouble( idOpct, idPrc, 100.000000 );
+              var idMd = charIDToTypeID( "Md  " );
+              var idBlnM = charIDToTypeID( "BlnM" );
+              var idNrml = charIDToTypeID( "Nrml" );
+              descFl.putEnumerated( idMd, idBlnM, idNrml );
+          executeAction( idFl, descFl, DialogModes.NO );
+          
+        }  else if ("${type}"=="gray_dither") {
+        
+          var idFl = charIDToTypeID( "fill" );
+              var descFl = new ActionDescriptor();
+              var idUsng = charIDToTypeID( "Usng" );
+              var idFlCn = charIDToTypeID( "FlCn" );
+              var idClr = charIDToTypeID( "Clr " );
+              descFl.putEnumerated( idUsng, idFlCn, idClr );
+              var idClr = charIDToTypeID( "Clr " );
+                  var descClr = new ActionDescriptor();
+                  var idRd = charIDToTypeID( "Rd  " );
+                  descClr.putDouble( idRd, step );
+                  var idGrn = charIDToTypeID( "Grn " );
+                  descClr.putDouble( idGrn, step );
+                  var idBl = charIDToTypeID( "Bl  " );
+                  descClr.putDouble( idBl, step );
+              var idRGBC = charIDToTypeID( "RGBC" );
+              descFl.putObject( idClr, idRGBC, descClr );
+              var idOpct = charIDToTypeID( "Opct" );
+              var idPrc = charIDToTypeID( "#Prc" );
+              descFl.putUnitDouble( idOpct, idPrc, 100.000000 );
+              var idMd = charIDToTypeID( "Md  " );
+              var idBlnM = charIDToTypeID( "BlnM" );
+              var idNrml = charIDToTypeID( "Nrml" );
+              descFl.putEnumerated( idMd, idBlnM, idNrml );
+          executeAction( idFl, descFl, DialogModes.NO );
+
+          var idDthr = stringIDToTypeID( "Dthr" );
+              var descDthr = new ActionDescriptor();
+              var idPlte = charIDToTypeID( "Plte" );
+              descDthr.putInteger( idPlte, 0 );
+              var idMthd = charIDToTypeID( "Mthd" );
+              descDthr.putInteger( idMthd, 1 );
+          executeAction( idDthr, descDthr, DialogModes.NO );          
+          
+        } else if ("${type}"=="median") {
+        
+          var idMdn = charIDToTypeID( "Mdn " );
+              var descMdn = new ActionDescriptor();
+              var idRds = charIDToTypeID( "Rds " );
+              var idPxl = charIDToTypeID( "#Pxl" );
+              descMdn.putUnitDouble( idRds, idPxl, ${radius} );
+          executeAction( idMdn, descMdn, DialogModes.NO );
+
+        } else if ("${type}"=="median_dither") {
+        
+          var idMdn = charIDToTypeID( "Mdn " );
+              var descMdn = new ActionDescriptor();
+              var idRds = charIDToTypeID( "Rds " );
+              var idPxl = charIDToTypeID( "#Pxl" );
+              descMdn.putUnitDouble( idRds, idPxl, ${radius} );
+          executeAction( idMdn, descMdn, DialogModes.NO );
+
+          var idDthr = stringIDToTypeID( "Dthr" );
+              var descDthr = new ActionDescriptor();
+              var idPlte = charIDToTypeID( "Plte" );
+              descDthr.putInteger( idPlte, 2 );
+              var idMthd = charIDToTypeID( "Mthd" );
+              descDthr.putInteger( idMthd, 1 );
+          executeAction( idDthr, descDthr, DialogModes.NO );
+
+        }
+
+        app.activeDocument.selection.invert();
+            
+        app.activeDocument.selection.clear();
+
+        app.activeDocument.selection.deselect();
+
+        //====================Engraving======================
+
+        createBlackLayerWithWhiteSelections(lineW, "${method}");
+        
+        if ("${method}"=="stripes"){
+          lineW++;     
+        } else {
+          lineW--;
+        }
+        
+        //===================================================
+
+        if ("${type}"=="gray" || "${type}"=="gray_dither") {
+          app.activeDocument.activeLayer.desaturate();        
+        } 
+
+        if (step != ${startLevel} && ${isMerged}) {
+          app.activeDocument.activeLayer.merge();
+        } 
+        
+        if ( !(${isMerged}) ) {
+          ArtLayers.push(String(step));
+        }
+          
+      }
+
+      app.activeDocument.activeLayer = bgLayer;
+
+      if ("${type}"=="median" || "${type}"=="median_dither") {
+          var idMdn = charIDToTypeID( "Mdn " );
+              var descMdn = new ActionDescriptor();
+              var idRds = charIDToTypeID( "Rds " );
+              var idPxl = charIDToTypeID( "#Pxl" );
+              descMdn.putUnitDouble( idRds, idPxl, ${radius} );
+          executeAction( idMdn, descMdn, DialogModes.NO );          
+      } else {
+          app.activeDocument.activeLayer.applyAverage();
+      }
+
+      if ("${type}"=="gray" || "${type}"=="gray_dither") {
+        app.activeDocument.activeLayer.desaturate();    
+      } 
+
+      app.activeDocument.activeLayer.adjustBrightnessContrast(-150, 100);
+
+      if (${isMerged}){
+        app.activeDocument.activeLayer = app.activeDocument.layers.getByName("${startLevel}");
+        app.activeDocument.activeLayer.merge();
+        app.activeDocument.activeLayer.name = "Engraving_" + Date.now();
+      } else {
+        var newLayerSet = app.activeDocument.layerSets.add();
+        newLayerSet.name = "Engraving";
+        for (var i = 0; i < ArtLayers.length; i++) {
+          var currentLayer = app.activeDocument.artLayers.getByName(ArtLayers[i]);
+          currentLayer.move(newLayerSet, ElementPlacement.PLACEATBEGINNING);
+        }
+      }
+      
+    `;
+
+   
+    
+    //console.log(scriptString);
+
+    window.addEventListener("message", onMessage); 
+    
+    function onMessage(e) {
+        if (e.data == "done") {
+          var endTime = new Date();
+          var duration = endTime - startTime;
+        
+          runTime.innerHTML = duration;
+          working.style.visibility = "hidden";
+          indi.style.visibility = "visible";            
+        } 
+    }
+
+    var startTime = new Date();
+    window.parent.postMessage(scriptString, "*");
+           
+  }
+  </script>  
+</body>
+</html>
